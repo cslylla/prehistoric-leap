@@ -1,0 +1,30 @@
+name: Deploy Game to Web
+on:
+  push:
+    branches:
+      - main  # Runs every time you push to the main branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Pygbag
+        run: pip install pygbag
+
+      - name: Build Web Version
+        # This uses your custom template from the static folder
+        run: python -m pygbag --build --template static/index.html .
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build/web # The folder created by pygbag
+          branch: gh-pages  # The secret branch that hosts your site
