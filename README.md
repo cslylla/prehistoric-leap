@@ -43,18 +43,30 @@ Fly through wall gaps (+1 score each), collect coins, avoid everything else. The
 
 ## Running Locally
 
+
+### 1. Clone the repo
+
 ```bash
-# 1. Clone the repo
 git clone <repository-url>
 cd prehistoric-leap
+```
 
-# 2. Activate the virtual environment
-# Windows:
+### 2. Activate the virtual environment
+
+Windows:
+
+```bash
 gaming\Scripts\activate
-# macOS/Linux:
-source gaming/bin/activate
+```
 
-# 3. Install dependencies & run
+macOS/Linux:
+
+```bash
+source gaming/bin/activate
+```
+
+### Install dependencies & run
+```bash
 pip install -r requirements.txt
 python main.py
 ```
