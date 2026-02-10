@@ -44,7 +44,7 @@ Fly through wall gaps (+1 score each), collect coins, avoid everything else. The
 ## Play Now (Web Version)
 
 You can play **Prehistoric Leap** directly in your browser here:
-[Link will go here once GitHub Pages is active]
+[Play NOW](https://cslylla.github.io/prehistoric-leap/)
 
 ## Installation & Local Play
 
@@ -70,6 +70,7 @@ source gaming/bin/activate
 ```
 
 ### 3. Install dependencies & run
+
 ```bash
 pip install -r requirements.txt
 python main.py
@@ -90,9 +91,12 @@ To reset your high score, edit `highscore.json` or just delete it.
 
 | Tech | Role |
 |---|---|
-| Python 3.10+ | Core language |
-| Pygame 2.5+ | Rendering, audio, input, collisions |
-| JSON | Level config & high-score persistence |
+| Python 3.10+ | Core logic and game state management. |
+| Pygame CE | Rendering, 2D physics, and audio engine. |
+| JSON | Level configuration and high-score persistence. |
+| Pygbag | Runtime environment and WebAssembly (Wasm) compilation. |
+| GitHub Actions | CI/CD pipeline for automated web builds on every push. |
+| CSS3 & HTML5 | Custom prehistoric-themed loading interface. |
 
 ## Project Context
 
@@ -103,3 +107,4 @@ Built as part of the **Codecademy AI Maker Bootcamp**, focusing on game design, 
 - **Visual Assets:** Character and Environment sprites generated via Gemini (Nano Banana model)
 - **Sound Design:** Custom sound effects generated with Python  synthesis tools (`pydub` & `FFmpeg`) using ChatGPT
 - **Built with:** [Pygame](https://www.pygame.org/)
+- **Deployed** on [GitHub Pages](https://docs.github.com/en/pages)
