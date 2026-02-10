@@ -444,13 +444,13 @@ class Game:
         self.bg_x = 0.0
 
         # ── Sounds (each loaded independently for robustness) ──
-        self.snd_flap = self._try_load_sound("flap.mp3", 0.5)
-        self.snd_enemy = self._try_load_sound("enemy.mp3", 0.35)
-        self.snd_gameover = self._try_load_sound("gameover.mp3", 0.6)
+        self.snd_flap = self._try_load_sound("flap.ogg", 0.5)
+        self.snd_enemy = self._try_load_sound("enemy.ogg", 0.35)
+        self.snd_gameover = self._try_load_sound("gameover.ogg", 0.6)
         self.snd_coin = self._try_load_sound("coin.mp3", 0.6)
 
         try:
-            pygame.mixer.music.load(os.path.join(SOUNDS_DIR, "bg.mp3"))
+            pygame.mixer.music.load(os.path.join(SOUNDS_DIR, "bg.ogg"))
             pygame.mixer.music.set_volume(0.3)
             pygame.mixer.music.play(-1)
         except Exception:
@@ -478,6 +478,7 @@ class Game:
         self.coin_hud_img = load_scaled_image("coin.png", (22, 22))
 
         # ── Game state ──
+        self.running = True
         self.state = self.START
         self.player = Player()
         self.walls: list[WallPair] = []
@@ -811,25 +812,24 @@ class Game:
     # ── Main loop (async for Pygbag web compatibility) ─────────────────
 
     async def run(self):
-        while True:
+        while self.running:
             self.handle_events()
             self.update()
             self.draw()
             clock.tick(FPS)
             await asyncio.sleep(0)  # yield to browser event loop
 
-    def _quit(self):
+        # ── Cleanup after the loop exits ──
         save_highscore(max(self.score, self.high_score))
         try:
             pygame.mixer.music.stop()
         except Exception:
             pass
         pygame.quit()
-        # Only call sys.exit on desktop; in a browser tab it raises an error
-        try:
-            sys.exit()
-        except SystemExit:
-            pass
+
+    def _quit(self):
+        """Signal the main loop to stop."""
+        self.running = False
 
 
 # ═══════════════════════════════════════════════════════════════════════
