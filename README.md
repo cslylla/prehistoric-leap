@@ -46,6 +46,8 @@ Fly through wall gaps (+1 score each), collect coins, avoid everything else. The
 You can play **Prehistoric Leap** directly in your browser here:
 [Play NOW](https://cslylla.github.io/prehistoric-leap/)
 
+> Note: Due to browser security policies, you must click the game screen once after loading to enable the background music and sound effects.
+
 ## Installation & Local Play
 
 ### 1. Clone the repo
@@ -83,7 +85,7 @@ To build the web version locally:
 
 ## Configuration
 
-Everything lives in `levels.json` — gravity, wall speed, gap size, enemy frequency, coin spawn chance, coin value, and more. Add levels, remove them, or rebalance the whole game from one file.
+Everything lives in `levels.json`: gravity, wall speed, gap size, enemy frequency, coin spawn chance, coin value, and more. Add levels, remove them, or rebalance the whole game from one file.
 
 To reset your high score, edit `highscore.json` or just delete it.
 
