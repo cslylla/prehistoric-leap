@@ -88,3 +88,9 @@ To reset your high score, edit `highscore.json` or just delete it.
 ## Project Context
 
 Built as part of the **Codecademy AI Maker Bootcamp**, focusing on game design, procedural content generation, and data-driven architecture.
+
+## Credits & Tools
+
+- **Visual Assets:** Character and Environment sprites generated via Gemini (Nano Banana model)
+- **Sound Design:** Custom sound effects generated with Python  synthesis tools (`pydub` & `FFmpeg`) using ChatGPT
+- **Built with:** [Pygame](https://www.pygame.org/)
