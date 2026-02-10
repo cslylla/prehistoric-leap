@@ -41,8 +41,12 @@ Fly through wall gaps (+1 score each), collect coins, avoid everything else. The
 | 4 | Extinction Event | Score 22 | Faster | 2x |
 | 5 | Meteor Strike | Score 35 | Max | 2x |
 
-## Running Locally
+## Play Now (Web Version)
 
+You can play **Prehistoric Leap** directly in your browser here:
+[Link will go here once GitHub Pages is active]
+
+## Installation & Local Play
 
 ### 1. Clone the repo
 
@@ -65,11 +69,16 @@ macOS/Linux:
 source gaming/bin/activate
 ```
 
-### Install dependencies & run
+### 3. Install dependencies & run
 ```bash
 pip install -r requirements.txt
 python main.py
 ```
+
+## 🏗️ Web Build Instructions
+
+To build the web version locally:
+`python -m pygbag --template static/index.html .`
 
 ## Configuration
 

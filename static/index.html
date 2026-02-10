@@ -1,0 +1,517 @@
+<html lang="en-us">
+<script src="https://pygame-web.github.io/archives/0.9/pythons.js" type=module id=site data-LINES=57 data-CONSOLE=25
+    data-python=python3.12 data-os=vtx,fs,snd,gui async defer>#<!--
+
+print("""
+Loading prehistoric-leap from prehistoric-leap.apk
+    Pygbag Version : 0.9.2
+    Template Version : 0.9.0
+    Python  : 3.12
+    CDN URL : https://pygame-web.github.io/archives/0.9/
+    Screen  : 1280x720
+    Title   : prehistoric-leap
+    Folder  : prehistoric-leap
+    Authors : pgw
+    SPDX-License-Identifier: cookiecutter.spdx
+
+""")
+
+
+# screen pixels (real, hardware)
+WIDTH=1024  # 1280
+HEIGHT=600  # 720
+
+# reference/idealized screen pixels
+REFX = 1980
+REFY = 1080
+
+def u(real, ref, v):
+    if abs(v)<0.9999999:
+        result = int( (float(real)/100.0) * (v*1000))
+        if v<0:
+            return real-result
+        return result
+    return int( (real/ref) * v )
+
+def ux(*argv):
+    global WIDTH, REFX
+    acc = 0
+    for v in argv:
+        acc += u(WIDTH, REFX, v)
+    return acc
+
+def uy(*argv):
+    global HEIGHT, REFY
+    acc = 0
+    for v in argv:
+        acc += u(HEIGHT, REFY, v)
+    return acc
+
+
+
+
+# do not rename
+async def custom_site():
+
+    import sys
+    import asyncio
+    import platform
+    import json
+    from pathlib import Path
+
+
+
+    import embed
+
+
+    platform.document.body.style.background = "#2b1f15"
+
+    import pygame
+
+    def compose():
+        pygame.display.update()
+        window.chromakey(None, *screen.get_colorkey(), 40)
+
+    pygame.init()
+    pygame.font.init()
+
+    screen = pygame.display.set_mode([ux(.100),uy(.100)], pygame.SRCALPHA, 32)
+    screen.set_colorkey( (0,0,0,0), pygame.RLEACCEL )
+    screen.fill( (0,0,0,0) )
+
+    compose()
+
+    platform.window.transfer.hidden = true
+    platform.window.canvas.style.visibility = "visible"
+
+
+
+    apk = "prehistoric-leap.apk"
+
+    bundle = "prehistoric-leap"
+
+    # the C or js loader could do that but be explicit.
+    appdir = Path(f"/data/data/{bundle}") # /data/data/prehistoric-leap
+    appdir.mkdir()
+
+
+    # mount apk
+
+    cfg = {
+        "io": "url",
+        "type":"mount",
+        "mount" : {
+            "point" : appdir.as_posix(),
+            "path" : "/",
+        },
+        "path" : f"/ => {appdir.as_posix()}",
+    }
+
+
+    track = platform.window.MM.prepare(apk, json.dumps(cfg))
+
+    marginx = ux(.020) # 20%
+    marginy = uy(.045) # 45%
+
+
+    def pg_bar(pos):
+        nonlocal marginx, marginy
+        total = track.len or 10
+        slot = ux(.060)/ total 
+
+        # Background of the bar (Change from (10,10,10) to a dark stone)
+        pygame.draw.rect(screen,(60, 40, 25),( marginx-ux(10), marginy-uy(10), (total*slot)+ux(20), uy(110) ) )
+        
+        # The Fill color (Change from (0,255,0) green to Gold (255, 220, 110))
+        pygame.draw.rect(screen,(255, 220, 110), ( marginx, marginy, track.pos*slot, uy(90)) )
+
+    # wait until zip mount + overlayfs is complete
+    while not track.ready:
+        pg_bar(track.pos)
+        compose()
+        await asyncio.sleep(.1)
+
+    # fill it up in case it was cached and instant download
+    pg_bar(track.len)
+    compose()
+
+
+    # preloader will change dir and prepend it to sys.path
+    platform.run_main(PyConfig, loaderhome= appdir / "assets", loadermain=None)
+
+
+    # wait preloading complete
+    # that includes images and wasm compilation of bundled modules
+    while embed.counter()<0:
+        await asyncio.sleep(.1)
+
+    main = appdir / "assets" / "main.py"
+
+    # start async top level machinery and add a console.
+    await TopLevel_async_handler.start_toplevel(platform.shell, console=window.python.config.debug)
+
+    # now that apk is mounted we have access to font cache
+    # but we need to fill __file__ that is not yet set
+    __import__(__name__).__file__ = str(main)
+
+
+    # now make a prompt
+    fnt = pygame.sysfont.SysFont("freesans",  uy(80) )
+
+    def ui_callback(pkg, error=None):
+        nonlocal fnt
+        if error:
+            prompt = fnt.render(f"{error}", True, "black")
+        else:
+            prompt = fnt.render(f"Setting [{pkg}] up", True, "black")
+        pg_bar(track.len)
+        screen.blit(prompt, ( marginx+ ux(80), marginy - uy(10) ) )
+        compose()
+
+    # test/wait if user media interaction required
+    if not platform.window.MM.UME:
+        # 1. Use standard pygame colors for reliability
+        COLOR_GOLD = (255, 220, 110)
+        COLOR_CAVE = (43, 31, 21)
+        
+        # 2. Force a clear background
+        screen.fill(COLOR_CAVE)
+        
+        # 3. Draw the progress bar at the 50% mark
+        pg_bar(track.len) 
+        
+        # 4. Create a font - 'sans' is the most compatible web-font
+        fnt = pygame.font.SysFont("sans", 40, bold=True)
+        prompt = fnt.render("CLICK TO START", True, COLOR_CAVE)
+        
+        # 5. PERFECT CENTERING: Get the middle of the actual screen
+        # Using the actual screen dimensions set at the top (1024x600)
+        text_rect = prompt.get_rect()
+        text_rect.center = (screen.get_width() // 2, screen.get_height() // 2)
+        
+        # 6. Draw it
+        screen.blit(prompt, text_rect)
+        compose()
+        print("""
+        * Waiting for media user engagement : please click/touch page *
+    """)
+        while not platform.window.MM.UME:
+            await asyncio.sleep(.1)
+
+    # cleanup
+    screen.fill( (0,0,0,0) )
+    pygame.display.flip()
+
+    await shell.runpy(main, callback=ui_callback)
+
+
+
+import asyncio
+
+asyncio.run( custom_site() )
+
+
+
+
+
+
+
+
+
+
+
+
+# BEGIN BLOCK
+#
+# now this is the html part you can (and should) customize
+# It is not mandatory : pygame-script when it reads the first line (also called
+# shebang ) of above code create absolute minimal widget set
+# required for running with default rules
+#
+# do not alter that comment block it is separating python code from html code
+# =============================================================================
+# --></script>
+
+<head><!--
+//=============================================================================
+//
+//
+//
+//
+//
+//
+//
+
+    {%- if cookiecutter.comment != "" -%}
+{{cookiecutter.comment}}
+    {% endif %}
+
+-->
+    <script type="application/javascript">
+        // END BLOCK
+
+
+
+        // this dict is available under PyConfig.config from __main__
+
+        config = {
+            xtermjs: "1",
+            _sdl2: "canvas",
+            user_canvas: 0,
+            user_canvas_managed: 0,
+            ume_block: 1,
+            can_close: 0,
+            archive: "prehistoric-leap",
+            gui_debug: 3,
+            cdn: "https://pygame-web.github.io/archives/0.9/",
+            autorun: 0,
+            PYBUILD: "3.12"
+        }
+
+    </script>
+
+    <title>prehistoric-leap</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="height=device-height, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+
+    <link rel="prefetch" href="https://pygame-web.github.io/archives/0.9/pythonrc.py">
+    <link rel="prefetch" href="https://pygame-web.github.io/archives/0.9/vt/xterm.js">
+    <link rel="prefetch" href="https://pygame-web.github.io/archives/0.9/vt/xterm-addon-image.js">
+    <link rel="prefetch" href="https://pygame-web.github.io/archives/0.9/vt/xterm-addon-image.js">
+
+
+    <link rel="icon" type="image/png" href="favicon.png" sizes="16x16">
+
+    <style>
+        /* ── Prehistoric Leap Custom Theme ── */
+        :root {
+            --stone-base: #825f3c;
+            /* Matching STONE_BASE */
+            --stone-dark: #553c26;
+            /* Matching STONE_DARK */
+            --stone-light: #aa8255;
+            /* Matching STONE_LIGHT */
+            --gold: #ffdc6e;
+            /* Matching TEXT_GOLD */
+            --lava: #e1412d;
+            /* Game Over Red */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            /* Darker cave background instead of powderblue */
+            background-color: #2b1f15;
+            color: white;
+            overflow: hidden;
+        }
+
+        #status {
+            display: inline-block;
+            vertical-align: top;
+            margin-top: 20px;
+            font-weight: bold;
+            color: var(--gold);
+            /* Gold text for status */
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        /* ── The Loader Button ── */
+        #button {
+            background-color: var(--stone-base) !important;
+            color: white !important;
+            border: 4px solid var(--stone-dark) !important;
+            border-radius: 12px;
+            padding: 10px 20px;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 0 var(--stone-dark);
+        }
+
+        #button:hover {
+            background-color: var(--stone-light) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 var(--stone-dark);
+        }
+
+        /* ── Progress Bar ── */
+        #progress {
+            height: 25px;
+            width: 300px;
+            appearance: none;
+            border: 2px solid var(--stone-dark);
+            border-radius: 10px;
+            background-color: #444;
+        }
+
+        #progress::-webkit-progress-value {
+            background-color: var(--gold);
+            border-radius: 8px;
+        }
+
+        canvas.emscripten {
+            border: 0px none;
+            background-color: transparent;
+            width: 100vw;
+            height: 100vh;
+            z-index: 5;
+            padding: 0;
+            margin: 0 auto;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+        .center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+    </style>
+
+    <script src="https://pygame-web.github.io/archives/0.9//browserfs.min.js"></script>
+
+</head>
+
+<body>
+
+    <div id="transfer" align=center>
+        <!--        <div class="spinner" id='spinner'></div> -->
+        <div class="emscripten" id="status">Downloading...</div>
+        <div class="emscripten">
+            <progress value="0" max="100" id="progress"></progress>
+        </div>
+    </div>
+
+
+    <canvas class="emscripten" id="canvas" width="1px" height="1px" oncontextmenu="event.preventDefault()" tabindex=1>
+    </canvas>
+
+    <div id=html></div>
+
+    <div id=crt class=bottomright>
+
+        <div id="system" hidden>
+            <div class="button-container">
+                <button id="aiostop" disabled>AIO ⏏︎</button>
+                <button id="aiopaused_true" disabled>AIO ■</button>
+                <button id="aiopaused_false" disabled>AIO ▶</button>
+                <button id="pygame_mixer_music_pause" disabled>Music ■</button>
+            </div>
+
+            <div class="button-container">
+                <div id=load_min>min</div>
+                <div id=load_avg>avg</div>
+                <div id=load_max>max</div>
+                <button id="load_rst" disabled>RESET</button>
+            </div>
+
+            <div id="level">(battery level unknown)</div>
+            <div id="stateBattery">(charging state unknown)</div>
+
+        </div>
+
+        <div id=box class="emscripten_border" hidden=true>
+
+            <div id="info" class="trinfo"></div>
+
+            <iframe id="iframe" class="framed" name="iframe" width="470px" height="90%" allowtransparency="true"
+                style="z-index: 10;" style="background: #FFFFFF;" frameborder="1" allowfullscreen="true"
+                webkitallowfullscreen="true" msallowfullscreen="true" mozallowfullscreen="true"
+                sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
+                allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
+                src="https://pygame-web.github.io/archives/0.9/empty.html" scrolling="yes">
+            </iframe>
+        </div>
+
+    </div>
+
+
+    <div id="dlg" hidden>
+        <input type="file" id="dlg_multifile" multiple accept="image/*">
+        <label for="dlg_multifile">Select files</label>
+    </div>
+
+    <div id="pyconsole">
+        <div id="terminal" tabIndex=1 align="left"></div>
+    </div>
+
+    <script type="application/javascript">
+
+        async function custom_onload(debug_hidden) {
+            // this is called before anything python is loaded
+            // make your js customization here
+            console.log(__FILE__, "custom_onload")
+
+            pyconsole.hidden = debug_hidden
+            system.hidden = debug_hidden
+            transfer.hidden = debug_hidden
+            info.hidden = debug_hidden
+            box.hidden = debug_hidden
+
+        }
+
+        function custom_prerun() {
+            // no python main and no (MEMFS + VFS) yet.
+            console.log(__FILE__, "custom_prerun")
+
+        }
+
+        function custom_postrun() {
+            // python main and no VFS filesystem yet.
+            console.log(__FILE__, "custom_postrun")
+
+            // prevent ff horizontal scroll
+            window.addEventListener("keydown", function (e) {
+                if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(e.code) > -1) {
+                    if (!python.config.debug)
+                        e.preventDefault();
+                }
+            }, false);
+
+        }
+
+        function debug() {
+            // allow to gain access to dev tools from js console
+            // but only on desktop. difficult to reach when in iframe
+            python.config.debug = true
+            custom_onload(false)
+            Module.PyRun_SimpleString("shell.uptime()")
+            window_resize()
+        }
+
+        function info_inline(data) {
+            document.getElementById("info").innerHTML = data
+        }
+
+        function info_online(url) {
+            // display info about current APK
+            fetch(url /*, options */)
+                .then((response) => response.text())
+                .then((html) => {
+                    info_inline(html);
+                })
+                .catch((error) => {
+                    console.warn(error);
+                });
+        }
+
+        function frame_online(url) {
+            window.frames["iframe"].location = url;
+        }
+
+    </script>
+
+</body>
+
+</html>

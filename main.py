@@ -19,18 +19,24 @@ Assets expected:
     assets/sounds/bg.mp3       – background music loop
 """
 
-import pygame
-import sys
+import asyncio
 import json
+import math
 import os
 import random
-import math
+import sys
+
+import pygame
 
 # ═══════════════════════════════════════════════════════════════════════
 #  Initialisation
 # ═══════════════════════════════════════════════════════════════════════
 pygame.init()
-pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
+try:
+    pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
+except Exception:
+    # Browser context may not support specific mixer args before user interaction
+    pygame.mixer.init()
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
@@ -54,8 +60,11 @@ BTN_NORMAL = (165, 105, 55)
 BTN_HOVER = (195, 135, 75)
 BTN_BORDER = (85, 55, 30)
 
-# ── Paths ─────────────────────────────────────────────────────────────
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# ── Paths (relative so they work both on desktop and inside Pygbag) ───
+try:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+except NameError:
+    BASE_DIR = "."
 IMAGES_DIR = os.path.join(BASE_DIR, "assets", "images")
 SOUNDS_DIR = os.path.join(BASE_DIR, "assets", "sounds")
 LEVELS_FILE = os.path.join(BASE_DIR, "levels.json")
@@ -88,21 +97,26 @@ def load_levels():
 
 
 def load_highscore():
-    """Read the persisted high score (returns 0 on first run)."""
+    """Read the persisted high score (returns 0 on first run).
+    Wrapped broadly so a browser sandbox that blocks file reads won't crash."""
     try:
         with open(HIGHSCORE_FILE, "r") as fh:
             return json.load(fh).get("high_score", 0)
-    except (FileNotFoundError, json.JSONDecodeError):
+    except Exception:
         return 0
 
 
 def save_highscore(score):
-    """Write the high score if it beats the existing record."""
-    current = load_highscore()
-    if score > current:
-        with open(HIGHSCORE_FILE, "w") as fh:
-            json.dump({"high_score": score}, fh, indent=2)
-        return True
+    """Write the high score if it beats the existing record.
+    Wrapped broadly so a browser sandbox that blocks file writes won't crash."""
+    try:
+        current = load_highscore()
+        if score > current:
+            with open(HIGHSCORE_FILE, "w") as fh:
+                json.dump({"high_score": score}, fh, indent=2)
+            return True
+    except Exception:
+        pass
     return False
 
 
@@ -794,20 +808,28 @@ class Game:
                     self.font_small, (185, 175, 150),
                     SCREEN_HEIGHT // 2 + 130)
 
-    # ── Main loop ─────────────────────────────────────────────────────
+    # ── Main loop (async for Pygbag web compatibility) ─────────────────
 
-    def run(self):
+    async def run(self):
         while True:
             self.handle_events()
             self.update()
             self.draw()
             clock.tick(FPS)
+            await asyncio.sleep(0)  # yield to browser event loop
 
     def _quit(self):
         save_highscore(max(self.score, self.high_score))
-        pygame.mixer.music.stop()
+        try:
+            pygame.mixer.music.stop()
+        except Exception:
+            pass
         pygame.quit()
-        sys.exit()
+        # Only call sys.exit on desktop; in a browser tab it raises an error
+        try:
+            sys.exit()
+        except SystemExit:
+            pass
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -816,4 +838,4 @@ class Game:
 
 if __name__ == "__main__":
     game = Game()
-    game.run()
+    asyncio.run(game.run())
